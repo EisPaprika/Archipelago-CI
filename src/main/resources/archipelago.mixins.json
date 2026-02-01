@@ -1,0 +1,25 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.alkia.archipelago.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "mixins": [
+    "ItemFrameMixin"
+  ],
+  "client": [
+    "ClientLevelMixin",
+    "ClientTooltipComponentMixin",
+    "EntriesScrollingWidgetMixin",
+    "InventoryScreenMixin",
+    "ItemFrameEntityRendererMixin",
+    "ItemStackMixin",
+    "PosableStateMixin",
+    "ProfilerSuppressionMixin",
+    "PokemonEntityMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
+
+

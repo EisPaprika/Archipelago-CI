@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "id": "archipelago",
+  "version": "${version}",
+  "name": "Archipelago",
+  "description": "The Cobblemon Islands Assistant Mod!",
+  "authors": [
+    "Alkia"
+  ],
+  "license": "MIT License",
+  "icon": "assets/archipelago/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "main": [
+      "com.alkia.archipelago.FabricMod"
+    ],
+    "client": [
+      "com.alkia.archipelago.FabricModClient"
+    ],
+    "modmenu": ["com.alkia.archipelago.config.ArchipelagoModMenuApiImpl"]
+  },
+  "mixins": [
+    "archipelago.mixins.json"
+  ],
+  "depends": {
+    "minecraft": "1.21.1",
+    "cobblemon": ">=1.7.0",
+    "cloth-config2": "*",
+    "modmenu": "*"
+  }
+}
