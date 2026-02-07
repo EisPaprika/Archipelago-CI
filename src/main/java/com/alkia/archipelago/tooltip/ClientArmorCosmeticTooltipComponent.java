@@ -4,9 +4,6 @@ import com.alkia.archipelago.config.ModConfig;
 import com.alkia.archipelago.util.KeyUtil;
 import com.alkia.archipelago.util.PolymerItemUtil;
 import com.mojang.authlib.GameProfile;
-import com.mojang.blaze3d.platform.Lighting;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.math.Axis;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
@@ -15,9 +12,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.armortrim.ArmorTrim;
 import net.minecraft.world.item.armortrim.TrimMaterial;
 import net.minecraft.world.item.armortrim.TrimPattern;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -34,8 +28,6 @@ import net.minecraft.world.item.component.CustomModelData;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.*;
 
 public class ClientArmorCosmeticTooltipComponent implements ClientTooltipComponent {
@@ -136,9 +128,6 @@ public class ClientArmorCosmeticTooltipComponent implements ClientTooltipCompone
     }
 
     private void equipWithDebug(EquipmentSlot slot, ItemStack stack) {
-        if (!stack.isEmpty() && slot == EquipmentSlot.HEAD) {
-             ensureEquippable(stack);
-        }
         dummyStand.setItemSlot(slot, stack);
 
         if (!ModConfig.enableSkinDebug) return;
@@ -178,48 +167,6 @@ public class ClientArmorCosmeticTooltipComponent implements ClientTooltipCompone
         }
     }
 
-    private void ensureEquippable(ItemStack stack) {
-
-        try {
-            //I have no idea what the class name for it is but this worked so
-            Class<?> equippableClass = Class.forName("net.minecraft.world.item.component.Equippable");
-
-            Object equippableType = null;
-            for (Field f : DataComponents.class.getDeclaredFields()) {
-                if (f.getName().equalsIgnoreCase("EQUIPPABLE")) {
-                    equippableType = f.get(null);
-                    break;
-                }
-            }
-            if (equippableType == null) return;
-
-
-            if (stack.get((net.minecraft.core.component.DataComponentType<?>)equippableType) != null) return;
-
-            Method builderMethod = equippableClass.getDeclaredMethod("builder", EquipmentSlot.class);
-            Object builder = builderMethod.invoke(null, EquipmentSlot.HEAD);
-            
-
-            try {
-                Method dispensableMethod = builder.getClass().getDeclaredMethod("setDispensable", boolean.class);
-                dispensableMethod.invoke(builder, true);
-            } catch (Throwable ignored) {}
-            
-            Method buildMethod = builder.getClass().getDeclaredMethod("build");
-            Object equippable = buildMethod.invoke(builder);
-
-            for (Method m : stack.getClass().getMethods()) {
-                if (m.getName().equals("set") && m.getParameterCount() == 2) {
-                    Class<?>[] params = m.getParameterTypes();
-                    if (params[0].getSimpleName().equals("DataComponentType")) {
-                        m.invoke(stack, equippableType, equippable);
-                        break;
-                    }
-                }
-            }
-        } catch (Throwable ignored) {}
-    }
-
     private EquipmentSlot getSlot(String slotName) {
         return switch (slotName.toLowerCase()) {
             case "head" -> EquipmentSlot.HEAD;
@@ -253,7 +200,7 @@ public class ClientArmorCosmeticTooltipComponent implements ClientTooltipCompone
 
             try {
                 stack.set(DataComponents.CUSTOM_MODEL_DATA,
-                        new net.minecraft.world.item.component.CustomModelData(match.customModelData()));
+                        new CustomModelData(match.customModelData()));
             } catch (Throwable ignored) {}
 
             applyCosmeticTrimIfPossible(stack, matchedKey != null ? matchedKey : polymerIdRaw, desiredSlot);
@@ -274,7 +221,7 @@ public class ClientArmorCosmeticTooltipComponent implements ClientTooltipCompone
         customDataNbt.put("$polymer:stack", polymerStack);
         customDataNbt.putString("polymer:id", polymerIdRaw);
 
-        stack.set(DataComponents.CUSTOM_DATA, net.minecraft.world.item.component.CustomData.of(customDataNbt));
+        stack.set(DataComponents.CUSTOM_DATA, CustomData.of(customDataNbt));
 
         if (ModConfig.enableSkinDebug && match != null) {
             System.out.println("[ARCHIPELAGO] Polymer matched slot=" + desiredSlot
@@ -295,7 +242,7 @@ public class ClientArmorCosmeticTooltipComponent implements ClientTooltipCompone
         var mc = Minecraft.getInstance();
         if (mc.level == null) return;
 
-        String patternName = extractTrimPatternName(idUsedForLookup, slot);
+        String patternName = extractTrimPatternName(idUsedForLookup);
         if (patternName == null || patternName.isBlank()) return;
 
 
@@ -343,7 +290,7 @@ public class ClientArmorCosmeticTooltipComponent implements ClientTooltipCompone
         }
     }
 
-    private String extractTrimPatternName(String idUsedForLookup, EquipmentSlot slot) {
+    private String extractTrimPatternName(String idUsedForLookup) {
         if (idUsedForLookup == null) return null;
 
 
@@ -378,15 +325,15 @@ public class ClientArmorCosmeticTooltipComponent implements ClientTooltipCompone
 
 
         if (polymerIdRaw.startsWith("ci:")) {
-            String name = polymerIdRaw.substring("ci:".length()); // e.g. spore_hatterene_chestplate
+            String name = polymerIdRaw.substring("ci:".length());
             for (String folder : cosmeticFoldersForSlot(slot)) {
                 out.add("ci:item/cosmetics/" + folder + "/" + name);
             }
 
-            String base = stripArmorSuffix(name);                 // spore_hatterene
-            String baseNoUnderscore = base.replace("_", "");      // sporehatterene
+            String base = stripArmorSuffix(name);
+            String baseNoUnderscore = base.replace("_", "");
 
-            String piece = armorPieceForSlot(slot);               // chestplate / leggings / boots / helmet
+            String piece = armorPieceForSlot(slot);
             if (!piece.isBlank()) {
                 out.add("ci:" + base + "_" + piece);
                 out.add("ci:" + baseNoUnderscore + "_" + piece);
