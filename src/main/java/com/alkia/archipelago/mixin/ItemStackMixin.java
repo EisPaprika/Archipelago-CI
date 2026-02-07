@@ -3,6 +3,7 @@ package com.alkia.archipelago.mixin;
 import com.alkia.archipelago.config.ModConfig;
 import com.alkia.archipelago.tooltip.ArmorCosmeticTooltipComponent;
 import com.alkia.archipelago.util.KeyUtil;
+import com.alkia.archipelago.util.PolymerItemUtil;
 import net.minecraft.ChatFormatting;
 
 import net.minecraft.core.component.DataComponents;
@@ -10,11 +11,10 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.tooltip.TooltipComponent;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.*;
 import net.minecraft.world.item.component.CustomData;
 import com.alkia.archipelago.tooltip.PokemonSkinTooltipComponent;
 import org.spongepowered.asm.mixin.Mixin;
@@ -134,12 +134,14 @@ public abstract class ItemStackMixin {
 
                 String setNameStr = baseId;
                 if (setNameStr.endsWith("_helmet")) setNameStr = setNameStr.substring(0, setNameStr.length() - 7);
-                else if (setNameStr.endsWith("_chestplate")) setNameStr = setNameStr.substring(0, setNameStr.length() - 11);
-                else if (setNameStr.endsWith("_leggings")) setNameStr = setNameStr.substring(0, setNameStr.length() - 9);
+                else if (setNameStr.endsWith("_chestplate"))
+                    setNameStr = setNameStr.substring(0, setNameStr.length() - 11);
+                else if (setNameStr.endsWith("_leggings"))
+                    setNameStr = setNameStr.substring(0, setNameStr.length() - 9);
                 else if (setNameStr.endsWith("_boots")) setNameStr = setNameStr.substring(0, setNameStr.length() - 6);
 
                 Optional<String> setName = Optional.of(setNameStr);
-                
+
                 if (!slot.isEmpty()) {
                     cir.setReturnValue(Optional.of(new ArmorCosmeticTooltipComponent(polymerId, slot, setName)));
                 }
@@ -148,7 +150,7 @@ public abstract class ItemStackMixin {
     }
 
     private Optional<TooltipComponent> createPokemonSkinComponent(CompoundTag skinToken) {
-        List<String>pokemonIds = new ArrayList<>();
+        List<String> pokemonIds = new ArrayList<>();
         //Grabbing Pokemon Species
         if (skinToken.contains("whitelist", Tag.TAG_LIST)) {
             ListTag whitelist = skinToken.getList("whitelist", Tag.TAG_STRING);
@@ -180,14 +182,35 @@ public abstract class ItemStackMixin {
         return Optional.empty();
     }
 
+    //Getting armor slot, tried grabbing just ids that contain _helmet etc. But the rainy days goomy hat decided it felt quirky
+    // and added _cap instead????????????????
     @Unique
     private String getArmorSlot(String polymerId) {
         if (polymerId == null) return "";
+
+        for (EquipmentSlot slot : List.of(EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET)) {
+            var match = PolymerItemUtil.findForSlot(polymerId, slot);
+            if (match.isPresent()) {
+                Item baseItem = match.get().baseItem();
+                if (baseItem instanceof ArmorItem armor) {
+                    if (armor.getEquipmentSlot() == slot) {
+                        return slot.getName();
+                    }
+                    // Currently still flags back cosmetics. Don't like this, yet. Back cosmetics are not supported.
+                } else if (baseItem == Items.POPPED_CHORUS_FRUIT) {
+                    return "head";
+                }
+            }
+        }
+
+
+        // Just in case it's not picked up still for some reason, using the old way I did it
         String lowerId = polymerId.toLowerCase();
-        if (lowerId.contains("helmet") || lowerId.contains("head")) return "head";
+        if (lowerId.contains("helmet") || lowerId.contains("head") || (lowerId.contains("_hat"))) return "head";
         if (lowerId.contains("chestplate") || lowerId.contains("chest")) return "chest";
         if (lowerId.contains("leggings") || lowerId.contains("legs")) return "legs";
         if (lowerId.contains("boots") || lowerId.contains("feet")) return "feet";
         return "";
+
     }
 }
