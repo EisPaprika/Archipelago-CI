@@ -36,15 +36,9 @@ public abstract class ItemStackMixin {
         boolean isArmorCosmetic = false;
 
         ItemStack stack = (ItemStack) (Object) this;
-        CustomData customData = stack.get(DataComponents.CUSTOM_DATA);
-        if (customData != null) {
-            CompoundTag nbt = customData.copyTag();
-            if (nbt.contains("$polymer:stack", Tag.TAG_COMPOUND)) {
-                String polymerId = nbt.getCompound("$polymer:stack").getString("id");
-                if (!getArmorSlot(polymerId).isEmpty()) {
-                    isArmorCosmetic = true;
-                }
-            }
+        String polymerId = PolymerItemUtil.getPolymerId(stack);
+        if (polymerId != null && !getArmorSlot(polymerId).isEmpty()) {
+            isArmorCosmetic = true;
         }
 
         if (isPokemonSkin || isArmorCosmetic) {
@@ -121,30 +115,26 @@ public abstract class ItemStackMixin {
         if (!KeyUtil.isModifierKeyDown(ModConfig.previewKey)) return;
 
         ItemStack stack = (ItemStack) (Object) this;
-        CustomData customData = stack.get(DataComponents.CUSTOM_DATA);
-        if (customData != null) {
-            CompoundTag nbt = customData.copyTag();
-            if (nbt.contains("$polymer:stack", Tag.TAG_COMPOUND)) {
-                String polymerId = nbt.getCompound("$polymer:stack").getString("id");
+        String polymerId = PolymerItemUtil.getPolymerId(stack);
 
-                String slot = getArmorSlot(polymerId);
+        if (polymerId != null) {
+            String slot = getArmorSlot(polymerId);
 
-                String baseId = polymerId.toLowerCase();
-                if (baseId.contains(":")) baseId = baseId.substring(baseId.indexOf(':') + 1);
+            String baseId = polymerId.toLowerCase();
+            if (baseId.contains(":")) baseId = baseId.substring(baseId.indexOf(':') + 1);
 
-                String setNameStr = baseId;
-                if (setNameStr.endsWith("_helmet")) setNameStr = setNameStr.substring(0, setNameStr.length() - 7);
-                else if (setNameStr.endsWith("_chestplate"))
-                    setNameStr = setNameStr.substring(0, setNameStr.length() - 11);
-                else if (setNameStr.endsWith("_leggings"))
-                    setNameStr = setNameStr.substring(0, setNameStr.length() - 9);
-                else if (setNameStr.endsWith("_boots")) setNameStr = setNameStr.substring(0, setNameStr.length() - 6);
+            String setNameStr = baseId;
+            if (setNameStr.endsWith("_helmet")) setNameStr = setNameStr.substring(0, setNameStr.length() - 7);
+            else if (setNameStr.endsWith("_chestplate"))
+                setNameStr = setNameStr.substring(0, setNameStr.length() - 11);
+            else if (setNameStr.endsWith("_leggings"))
+                setNameStr = setNameStr.substring(0, setNameStr.length() - 9);
+            else if (setNameStr.endsWith("_boots")) setNameStr = setNameStr.substring(0, setNameStr.length() - 6);
 
-                Optional<String> setName = Optional.of(setNameStr);
+            Optional<String> setName = Optional.of(setNameStr);
 
-                if (!slot.isEmpty()) {
-                    cir.setReturnValue(Optional.of(new ArmorCosmeticTooltipComponent(polymerId, slot, setName)));
-                }
+            if (!slot.isEmpty()) {
+                cir.setReturnValue(Optional.of(new ArmorCosmeticTooltipComponent(polymerId, slot, setName)));
             }
         }
     }

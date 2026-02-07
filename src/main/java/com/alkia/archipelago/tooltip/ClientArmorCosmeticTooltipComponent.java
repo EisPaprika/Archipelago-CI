@@ -157,16 +157,9 @@ public class ClientArmorCosmeticTooltipComponent implements ClientTooltipCompone
             if (cmdComponent != null) cmd = cmdComponent.value();
         } catch (Throwable ignored) {}
         // PolymerId Grabbing
-        String polymerId = "(none)";
-        CustomData customData = stack.get(DataComponents.CUSTOM_DATA);
-        if (customData != null) {
-            CompoundTag nbt = customData.copyTag();
-            if (nbt.contains("$polymer:stack", Tag.TAG_COMPOUND)) {
-                polymerId = nbt.getCompound("$polymer:stack").getString("id");
-            } else if (nbt.contains("polymer:id", Tag.TAG_STRING)) {
-                polymerId = nbt.getString("polymer:id");
-            }
-        }
+        String polymerId = PolymerItemUtil.getPolymerId(stack);
+        if (polymerId == null) polymerId = "(none)";
+
         // Print stuffs
         String info = stack.getItem() + " cmd=" + cmd;
         String debugKey = slot.toString() + ":" + polymerId;
@@ -175,6 +168,7 @@ public class ClientArmorCosmeticTooltipComponent implements ClientTooltipCompone
             System.out.println("[ARCHIPELAGO] Equip " + slot + " [" + polymerId + "]: " + info);
             System.out.println("[ARCHIPELAGO] " + slot + " CUSTOM_MODEL_DATA component=" + cmdComponent);
 
+            CustomData customData = stack.get(DataComponents.CUSTOM_DATA);
             if (customData != null) {
                 CompoundTag nbt = customData.copyTag();
                 System.out.println("[ARCHIPELAGO] " + slot + " CUSTOM_DATA=" + nbt);
