@@ -64,8 +64,10 @@ public class CreditsScreen extends Screen {
 // Thumberking - 2 mil pokecoins!
 // Lilcardawg - 250k pokecoins!
 // Spectra82 - 5 mil Pokecoins!
+// K4rina -  10mil
 
 //Leaderboard:
+// K4rina 10mil
 // 121 Jiggawatts Spectra82 5mil
 // NovaSam622 4mil
 // Driplocaulus, PMJP, Kygron 3mil

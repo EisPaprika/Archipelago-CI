@@ -19,7 +19,6 @@ import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent
 import net.minecraft.client.player.RemotePlayer;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -57,12 +56,12 @@ public class ClientArmorCosmeticTooltipComponent implements ClientTooltipCompone
 
     @Override
     public int getHeight() {
-        return 80;
+        return 0;
     }
 
     @Override
     public int getWidth(Font font) {
-        return 80;
+        return 0;
     }
 
     @Override
@@ -79,10 +78,35 @@ public class ClientArmorCosmeticTooltipComponent implements ClientTooltipCompone
             applyStacksToDummy(showFullSet);
             lastShowFullSet = showFullSet;
         }
+
+        // Zoom logic, same as what I did inside of the skin token tooltip
+        boolean isZoomed = KeyUtil.isModifierKeyDown(ModConfig.zoomKey);
+        int currentX = isZoomed ? (x -145) : (x - 85);
+        int boxSize = isZoomed ? 128 : 64;
+
+        if (ModConfig.enablePreviewBackground) {
+            int x1 = currentX  - 6;
+            int yOffsetBox = isZoomed ? 25 : 15;
+            int y1 = y - 6 - yOffsetBox;
+            int x2 = currentX + boxSize + 10;
+            int y2 = y + boxSize + 6;
+
+            guiGraphics.fill(x1, y1, x2, y2, 400, 0xF0100010);
+
+            guiGraphics.fill(x1 - 1, y1, x1, y2, 400, 0xFF5000FF);
+            guiGraphics.fill(x2, y1, x2 + 1, y2, 400, 0xFF5000FF);
+            guiGraphics.fill(x1, y1 - 1, x2, y1, 400, 0xFF5000FF);
+            guiGraphics.fill(x1, y2, x2, y2 + 1, 400, 0xFF5000FF);
+
+            guiGraphics.fill(x1, y1 + 1, x1 + 1, y2 - 1, 400, 0x505000FF);
+            guiGraphics.fill(x2 - 1, y1 + 1, x2, y2 - 1, 400, 0x505000FF);
+            guiGraphics.fill(x1 + 1, y1, x2 - 1, y1 + 1, 400, 0x505000FF);
+            guiGraphics.fill(x1 + 1, y2 - 1, x2 - 1, y2, 400, 0x505000FF);
+        }
         // Transforms for the dummy
-        float scale = 30.0f;
-        int renderX = x + 40;
-        int renderY = y + 70;
+        float scale = isZoomed ? 60.0f : 30.0f;
+        int renderX = currentX + (isZoomed ? 66 : 34);
+        int renderY = y + (isZoomed ? 110 : 65);
         float spin = (float) (((System.currentTimeMillis() % 8000) / 8000.0) * 360.0);
         float yaw = (spin + 180.0f) % 360.0f;
         dummyStand.tickCount = Minecraft.getInstance().player != null ? Minecraft.getInstance().player.tickCount : 0;
@@ -98,6 +122,9 @@ public class ClientArmorCosmeticTooltipComponent implements ClientTooltipCompone
         Vector3f translation = new Vector3f(0.0f, 0.0f, 0.0f);
         Quaternionf bodyRotation = new Quaternionf().rotationZ((float) Math.PI);
         Quaternionf cameraRotation = new Quaternionf();
+        var matrices = guiGraphics.pose();
+        matrices.pushPose();
+        matrices.translate(0, 0, 500);
         // Finally, renders the dummy
         InventoryScreen.renderEntityInInventory(
                 guiGraphics, (float) renderX, (float) renderY, scale,
@@ -122,8 +149,13 @@ public class ClientArmorCosmeticTooltipComponent implements ClientTooltipCompone
             boolean looksLikePath = prefix.contains("/") || prefix.startsWith(ARMOR_PATH_PREFIX) || prefix.contains(COSMETIC_PATH_PREFIX);
             String sep = (prefix.endsWith("_") || prefix.endsWith(":") || prefix.endsWith("/")) ? "" : "_";
             if (!looksLikePath && !prefix.contains(":")) prefix = CI_PREFIX + prefix;
+            // Head overrides. Why are there 50 different variations for helmets in the rp???????
+            ItemStack head = createCosmeticStack(prefix + sep + "helmet", "head", false);
+            if (head.isEmpty()) head = createCosmeticStack(prefix + sep + "bucket_hat", "head", false);
+            if (head.isEmpty()) head = createCosmeticStack(prefix + sep + "hat", "head", false);
+            if (head.isEmpty()) head = createCosmeticStack(prefix + sep + "halo", "head", false);
             // Create cosmetics
-            fullSetStacks.put(EquipmentSlot.HEAD, createCosmeticStack(prefix + sep + "helmet", "head", false));
+            fullSetStacks.put(EquipmentSlot.HEAD, head);
             fullSetStacks.put(EquipmentSlot.CHEST, createCosmeticStack(prefix + sep + "chestplate", "chest", false));
             fullSetStacks.put(EquipmentSlot.LEGS, createCosmeticStack(prefix + sep + "leggings", "legs", false));
             fullSetStacks.put(EquipmentSlot.FEET, createCosmeticStack(prefix + sep + "boots", "feet", false));
