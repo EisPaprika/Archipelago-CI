@@ -62,5 +62,6 @@
   "option.archipelago.particle_debug": "Particle Debug",
   "option.archipelago.previewer": "Skin Previewer",
   "option.archipelago.enable_item_frame_skins": "3D Item Frame Skins",
-  "tooltip.archipelago.enable_item_frame_skins": "Renders the Pokemon when a Skin Token is placed in an Item Frame (requires a Redstone Block behind it). (Caution: Can cause lag)"
+  "tooltip.archipelago.enable_item_frame_skins": "Renders the Pokemon when a Skin Token is placed in an Item Frame (requires a Redstone Block behind it). (Caution: Can cause lag)",
+  "option.archipelago.tap_preview": "Tap instead of hold to preview"
 }
