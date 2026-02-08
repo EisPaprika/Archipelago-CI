@@ -9,6 +9,8 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.item.armortrim.ArmorTrim;
 import net.minecraft.world.item.armortrim.TrimMaterial;
 import net.minecraft.world.item.armortrim.TrimPattern;
@@ -24,6 +26,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.component.CustomModelData;
+import net.minecraft.client.gui.screens.inventory.tooltip.TooltipRenderUtil;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
@@ -33,7 +36,7 @@ public class ClientArmorCosmeticTooltipComponent implements ClientTooltipCompone
     private static final String CI_PREFIX = "ci:";
     private static final String ARMOR_PATH_PREFIX = "armors/";
     private static final String COSMETIC_PATH_PREFIX = "item/cosmetics/";
-    private static final ResourceLocation QUARTZ_MATERIAL = ResourceLocation.fromNamespaceAndPath("minecraft", "quartz");
+    private static final ResourceLocation COSMETIC_TRIM_MATERIAL = ResourceLocation.fromNamespaceAndPath("minecraft", "quartz");
     private static final UUID PREVIEW_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
 
     private final ArmorCosmeticTooltipComponent data;
@@ -43,6 +46,9 @@ public class ClientArmorCosmeticTooltipComponent implements ClientTooltipCompone
     private final Map<EquipmentSlot, ItemStack> fullSetStacks = new EnumMap<>(EquipmentSlot.class);
     private boolean cachedStacksInitialized = false;
     private Boolean lastShowFullSet = null;
+    private static boolean showFullSetToggle = false;
+    private static boolean lastWasFullSetPressed = false;
+    private static String lastSetName = "";
 
     private final Map<String, String> lastEquippedDebugKey = new HashMap<>();
 
@@ -71,14 +77,28 @@ public class ClientArmorCosmeticTooltipComponent implements ClientTooltipCompone
             initializeCachedStacks();
             cachedStacksInitialized = true;
         }
+        // Toggling logic between full set and single piece
+        String  currentSetName = data.setName().orElse(data.polymerId());
+
+        // Resets toggle if a different set is previewed
+        if (!currentSetName.equals(lastSetName)) {
+            showFullSetToggle = false;
+            lastSetName = currentSetName;
+        }
+
         // Key press handling for showing full set, bound to mega key, not sure if I should make it its own individual
         // keybind at some point..
         boolean showFullSet = KeyUtil.isModifierKeyDown(ModConfig.megaKey);
-        if (lastShowFullSet == null || lastShowFullSet != showFullSet) {
-            applyStacksToDummy(showFullSet);
-            lastShowFullSet = showFullSet;
+        if (showFullSet && !lastWasFullSetPressed) {
+            showFullSetToggle = !showFullSetToggle;
         }
+        lastWasFullSetPressed = showFullSet;
 
+        // Toggles full set on the dummy
+        if (lastShowFullSet == null || lastShowFullSet != showFullSetToggle) {
+            applyStacksToDummy(showFullSetToggle);
+            lastShowFullSet = showFullSetToggle;
+        }
         // Zoom logic, same as what I did inside of the skin token tooltip
         boolean isZoomed = KeyUtil.isModifierKeyDown(ModConfig.zoomKey);
         int currentX = isZoomed ? (x -145) : (x - 85);
@@ -88,48 +108,59 @@ public class ClientArmorCosmeticTooltipComponent implements ClientTooltipCompone
             int x1 = currentX  - 6;
             int yOffsetBox = isZoomed ? 25 : 15;
             int y1 = y - 6 - yOffsetBox;
-            int x2 = currentX + boxSize + 10;
-            int y2 = y + boxSize + 6;
+            int width = boxSize + 16;
+            int height = boxSize + 12 + yOffsetBox;
 
-            guiGraphics.fill(x1, y1, x2, y2, 400, 0xF0100010);
-
-            guiGraphics.fill(x1 - 1, y1, x1, y2, 400, 0xFF5000FF);
-            guiGraphics.fill(x2, y1, x2 + 1, y2, 400, 0xFF5000FF);
-            guiGraphics.fill(x1, y1 - 1, x2, y1, 400, 0xFF5000FF);
-            guiGraphics.fill(x1, y2, x2, y2 + 1, 400, 0xFF5000FF);
-
-            guiGraphics.fill(x1, y1 + 1, x1 + 1, y2 - 1, 400, 0x505000FF);
-            guiGraphics.fill(x2 - 1, y1 + 1, x2, y2 - 1, 400, 0x505000FF);
-            guiGraphics.fill(x1 + 1, y1, x2 - 1, y1 + 1, 400, 0x505000FF);
-            guiGraphics.fill(x1 + 1, y2 - 1, x2 - 1, y2, 400, 0x505000FF);
+            // Figured out how to use MC's actual tooltip rendering instead of the hellspawn I was using before.
+            TooltipRenderUtil.renderTooltipBackground(guiGraphics, x1, y1, width, height, 400);
         }
-        // Transforms for the dummy
-        float scale = isZoomed ? 60.0f : 30.0f;
-        int renderX = currentX + (isZoomed ? 66 : 34);
-        int renderY = y + (isZoomed ? 110 : 65);
+        // Handles preview spinning
         float spin = (float) (((System.currentTimeMillis() % 8000) / 8000.0) * 360.0);
         float yaw = (spin + 180.0f) % 360.0f;
+
+        // Global variables used for both armor stand and fake player
+        float renderScale;
+        Vector3f translation = new Vector3f(0.0f, 0.0f, 0.0f);
+        int finalRenderY;
+
+        if (showFullSetToggle) {
+            dummyStand.setInvisible(false);
+            renderScale = isZoomed ? 60.0f : 30.0f;
+            finalRenderY = y + (isZoomed ? 110 : 65);
+        } else {
+            dummyStand.setInvisible(true);
+
+            EquipmentSlot slot = getSlot(data.slot());
+            renderScale = isZoomed ? 100.0f : 40.0f;
+            finalRenderY = y + (isZoomed ? 64 : 32);
+            float yOffset = switch (slot) {
+                case HEAD -> 1.75f;
+                case CHEST -> 1.3f;
+                case LEGS -> 0.85f;
+                case FEET -> 0.15f;
+                default -> 1.0f;
+            };
+            translation.set(0.0f, yOffset, 0.0f);
+        }
+
+        // Global rotations n stuff
         dummyStand.tickCount = Minecraft.getInstance().player != null ? Minecraft.getInstance().player.tickCount : 0;
         dummyStand.setYRot(yaw);
         dummyStand.setYBodyRot(yaw);
         dummyStand.setYHeadRot(yaw);
-        dummyStand.setXRot(0f);
         dummyStand.yRotO = yaw;
         dummyStand.yBodyRotO = yaw;
         dummyStand.yHeadRotO = yaw;
-        dummyStand.xRotO = 0f;
-        dummyStand.setInvisible(false);
-        Vector3f translation = new Vector3f(0.0f, 0.0f, 0.0f);
-        Quaternionf bodyRotation = new Quaternionf().rotationZ((float) Math.PI);
-        Quaternionf cameraRotation = new Quaternionf();
+
         var matrices = guiGraphics.pose();
         matrices.pushPose();
         matrices.translate(0, 0, 500);
         // Finally, renders the dummy
         InventoryScreen.renderEntityInInventory(
-                guiGraphics, (float) renderX, (float) renderY, scale,
-                translation, bodyRotation, cameraRotation, dummyStand
+                guiGraphics, (float) (currentX + (isZoomed ? 66 : 34)), (float) finalRenderY, renderScale,
+                translation, new Quaternionf().rotationZ((float) Math.PI), new Quaternionf(), dummyStand
         );
+        matrices.popPose();
     }
 
     private void initializeCachedStacks() {
@@ -167,18 +198,22 @@ public class ClientArmorCosmeticTooltipComponent implements ClientTooltipCompone
             dummyStand.setItemSlot(slot, ItemStack.EMPTY);
         }
 
+        singleItemStacks.forEach(dummyStand::setItemSlot);
+
         if (fullSet && !fullSetStacks.isEmpty()) {
-            fullSetStacks.forEach(this::equipWithDebug);
+            fullSetStacks.forEach((slot, stack) -> {
+                equipWithDebug(dummyStand, slot, stack);
+            });
         } else {
-            singleItemStacks.forEach(this::equipWithDebug);
+            singleItemStacks.forEach((slot, stack) -> equipWithDebug(dummyStand, slot, stack));
         }
     }
 
 
     //Equips item, logs item/polymer debug info if enabled. Had to use this a lot because ids are weird and  will make
     //bug reports easier anyways
-    private void equipWithDebug(EquipmentSlot slot, ItemStack stack) {
-        dummyStand.setItemSlot(slot, stack);
+    private void equipWithDebug(LivingEntity entity, EquipmentSlot slot, ItemStack stack) {
+        entity.setItemSlot(slot, stack);
         // Stops if debug is disabled
         if (!ModConfig.enableSkinDebug) return;
         // CustomModelData grabbing
@@ -293,7 +328,7 @@ public class ClientArmorCosmeticTooltipComponent implements ClientTooltipCompone
             var patReg = access.registryOrThrow(Registries.TRIM_PATTERN);
 
             Holder<TrimMaterial> material = matReg.getHolderOrThrow(
-                    ResourceKey.create(Registries.TRIM_MATERIAL, QUARTZ_MATERIAL)
+                    ResourceKey.create(Registries.TRIM_MATERIAL, COSMETIC_TRIM_MATERIAL)
             );
 
             ResourceLocation patternIdMc = ResourceLocation.withDefaultNamespace(patternName);
@@ -310,7 +345,7 @@ public class ClientArmorCosmeticTooltipComponent implements ClientTooltipCompone
             stack.set(DataComponents.TRIM, new ArmorTrim(material, pattern));
             // Debug to show trim thats been applied and its pattern
             if (ModConfig.enableSkinDebug) {
-                System.out.println("[ARCHIPELAGO] Applied TRIM material=" + QUARTZ_MATERIAL + " pattern=" + patternName + " for " + idUsedForLookup);
+                System.out.println("[ARCHIPELAGO] Applied TRIM material=" + COSMETIC_TRIM_MATERIAL + " pattern=" + patternName + " for " + idUsedForLookup);
             }
         } catch (RuntimeException ignored) {}
     }

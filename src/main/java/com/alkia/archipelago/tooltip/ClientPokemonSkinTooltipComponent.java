@@ -11,6 +11,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.client.gui.screens.inventory.tooltip.TooltipRenderUtil;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -251,21 +252,11 @@ public class ClientPokemonSkinTooltipComponent implements ClientTooltipComponent
                     int x1 = currentX - 6;
                     int yOffsetBox = isZoomed ? 25 : 15;
                     int y1 = y - 6 - yOffsetBox;
-                    int x2 = currentX + boxSize + 10;
-                    int y2 = y + boxSize + 6;
-                    guiGraphics.fill(x1, y1, x2, y2, 400, 0xF0100010);
+                    int width = boxSize + 16;
+                    int height = boxSize + 12 + yOffsetBox;
 
-                    // Draw the outer border (Deep purple)
-                    guiGraphics.fill(x1 - 1, y1, x1, y2, 400, 0xFF5000FF); // Left
-                    guiGraphics.fill(x2, y1, x2 + 1, y2, 400, 0xFF5000FF); // Right
-                    guiGraphics.fill(x1, y1 - 1, x2, y1, 400, 0xFF5000FF); // Top
-                    guiGraphics.fill(x1, y2, x2, y2 + 1, 400, 0xFF5000FF); // Bottom
-
-                    // Draw the inner border (Lighter purple)
-                    guiGraphics.fill(x1, y1 + 1, x1 + 1, y2 - 1, 400, 0x505000FF); // Left
-                    guiGraphics.fill(x2 - 1, y1 + 1, x2, y2 - 1, 400, 0x505000FF); // Right
-                    guiGraphics.fill(x1 + 1, y1, x2 - 1, y1 + 1, 400, 0x505000FF); // Top
-                    guiGraphics.fill(x1 + 1, y2 - 1, x2 - 1, y2, 400, 0x505000FF); // Bottom
+                    // Render tooltip background
+                    TooltipRenderUtil.renderTooltipBackground(guiGraphics, x1, y1, width, height, 400);
                 }
                 var matrices = guiGraphics.pose();
                 matrices.pushPose();
