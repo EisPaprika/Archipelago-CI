@@ -30,6 +30,28 @@ import java.util.Optional;
 
 @Mixin(ItemStack.class)
 public abstract class ItemStackMixin {
+
+    @Unique
+    private static boolean archipelago$previewToggled = false;
+    @Unique
+    private static boolean archipelago$lastPreviewToggled = false;
+
+    @Unique
+    private static boolean archipelago$isPreviewActive() {
+        boolean previewing = KeyUtil.isModifierKeyDown(ModConfig.previewKey);
+
+        if (ModConfig.tapPreview) {
+            if (previewing && !archipelago$lastPreviewToggled) {
+                archipelago$previewToggled = !archipelago$previewToggled;
+            }
+            archipelago$lastPreviewToggled = previewing;
+            return archipelago$previewToggled;
+        } else {
+            archipelago$previewToggled = false;
+            archipelago$lastPreviewToggled = previewing;
+            return previewing;
+        }
+    }
     @Inject(method = "getTooltipLines", at = @At("RETURN"))
     private void addShiftPrompt(Item.TooltipContext context, Player player, TooltipFlag tooltipFlag, CallbackInfoReturnable<List<Component>> cir) {
         boolean isPokemonSkin = getSkinTokenTag().isPresent();
@@ -44,9 +66,11 @@ public abstract class ItemStackMixin {
         if (isPokemonSkin || isArmorCosmetic) {
             List<Component> tooltip = cir.getReturnValue();
             String previewKeyName = ModConfig.previewKey.getLocalizedName().getString();
-            tooltip.add(Component.literal("Hold " + previewKeyName + " for Preview").withStyle(ChatFormatting.AQUA));
 
-            if (KeyUtil.isModifierKeyDown(ModConfig.previewKey)) {
+            String pressOrHold = ModConfig.tapPreview ? "Press " : "Hold ";
+            tooltip.add(Component.literal(pressOrHold + previewKeyName + " for Preview").withStyle(ChatFormatting.AQUA));
+
+            if (archipelago$isPreviewActive()) {
                 if (isPokemonSkin) {
                     String zoomKeyName = ModConfig.zoomKey.getLocalizedName().getString();
                     String shinyKeyName = ModConfig.shinyKey.getLocalizedName().getString();
@@ -61,8 +85,10 @@ public abstract class ItemStackMixin {
                     if (!ModConfig.enableEvolutionScrollling)
                         tooltip.add(Component.literal("Press " + evolutionKeyName + " for Next Evolution").withStyle(ChatFormatting.AQUA));
                 } else {
+                    String zoomKeyName = ModConfig.zoomKey.getLocalizedName().getString();
                     String megaKeyName = ModConfig.megaKey.getLocalizedName().getString();
                     tooltip.add(Component.literal("Hold " + megaKeyName + " for Full Set").withStyle(ChatFormatting.AQUA));
+                    tooltip.add(Component.literal("Hold " + zoomKeyName + " to Zoom").withStyle(ChatFormatting.AQUA));
                 }
             }
         }
@@ -83,7 +109,7 @@ public abstract class ItemStackMixin {
 
     @Inject(method = "getTooltipImage", at = @At("HEAD"), cancellable = true)
     private void injectPokemonSkinTooltip(CallbackInfoReturnable<Optional<TooltipComponent>> cir) {
-        if (!KeyUtil.isModifierKeyDown(ModConfig.previewKey)) return;
+        if (!archipelago$isPreviewActive()) return;
 
         getSkinTokenTag()
                 .flatMap(this::createPokemonSkinComponent)
@@ -112,7 +138,7 @@ public abstract class ItemStackMixin {
 
     @Inject(method = "getTooltipImage", at = @At("HEAD"), cancellable = true)
     private void injectArmorCosmeticTooltip(CallbackInfoReturnable<Optional<TooltipComponent>> cir) {
-        if (!KeyUtil.isModifierKeyDown(ModConfig.previewKey)) return;
+        if (!archipelago$isPreviewActive()) return;
 
         ItemStack stack = (ItemStack) (Object) this;
         String polymerId = PolymerItemUtil.getPolymerId(stack);
@@ -124,16 +150,27 @@ public abstract class ItemStackMixin {
             if (baseId.contains(":")) baseId = baseId.substring(baseId.indexOf(':') + 1);
 
             String setNameStr = baseId;
-            if (setNameStr.endsWith("_helmet")) setNameStr = setNameStr.substring(0, setNameStr.length() - 7);
-            else if (setNameStr.endsWith("_chestplate"))
-                setNameStr = setNameStr.substring(0, setNameStr.length() - 11);
-            else if (setNameStr.endsWith("_leggings"))
-                setNameStr = setNameStr.substring(0, setNameStr.length() - 9);
-            else if (setNameStr.endsWith("_boots")) setNameStr = setNameStr.substring(0, setNameStr.length() - 6);
+            boolean firstpassed = false;
 
-            // fallback for sets like rainydays because it has _bucket_ inside of its ID for some reason
-            int underscore = setNameStr.indexOf('_');
-            if (underscore > 0) setNameStr = setNameStr.substring(0, underscore);
+            if (setNameStr.endsWith("_helmet")) {
+                setNameStr = setNameStr.substring(0, setNameStr.length() - 7);
+                firstpassed = true;
+            } else if (setNameStr.endsWith("_chestplate")) {
+                setNameStr = setNameStr.substring(0, setNameStr.length() - 11);
+                firstpassed = true;
+            } else if (setNameStr.endsWith("_leggings")) {
+                setNameStr = setNameStr.substring(0, setNameStr.length() - 9);
+                firstpassed = true;
+            } else if (setNameStr.endsWith("_boots")) {
+                setNameStr = setNameStr.substring(0, setNameStr.length() - 6);
+                firstpassed = true;
+            }
+            if (!firstpassed) {
+                // fallback for sets like rainydays because it has _bucket_ inside of its ID for some reason
+                int underscore = setNameStr.indexOf('_');
+                if (underscore > 0) setNameStr = setNameStr.substring(0, underscore);
+            }
+
             Optional<String> setName = Optional.of(setNameStr);
 
             if (!slot.isEmpty()) {

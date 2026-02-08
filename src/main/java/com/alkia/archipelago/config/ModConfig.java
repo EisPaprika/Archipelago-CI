@@ -55,6 +55,7 @@ public class ModConfig {
     public static boolean enableCustomButtonsButton = true;
     public static boolean enableEvolutionScrollling = true;
     public static boolean enableItemFrameSkins = true;
+    public static boolean tapPreview = false;
     public static List<String> buttonOrder = new ArrayList<>();
     public static List<CustomCommandButton> customButtons = new ArrayList<>();
 
@@ -256,6 +257,7 @@ public class ModConfig {
         boolean enableEvolutionScrollling = true;
         boolean enabletokensintooltips = true;
         boolean enableItemFrameSkins = true;
+        boolean tapPreview = false;
         ModifierKeyCode previewKey = ModConfig.previewKey;
         ModifierKeyCode zoomKey = ModConfig.zoomKey;
         ModifierKeyCode shinyKey = ModConfig.shinyKey;
@@ -331,6 +333,7 @@ public class ModConfig {
             enableEvolutionScrollling = data.enableEvolutionScrollling;
             enabletokensintooltips = data.enabletokensintooltips;
             enableItemFrameSkins = data.enableItemFrameSkins;
+            tapPreview = data.tapPreview;
             buttonOrder = (data.buttonOrder == null) ? new ArrayList<>() : new ArrayList<>(data.buttonOrder);
             for (String id : DEFAULT_BUTTON_ORDER) {
                 if (!buttonOrder.contains(id)) {
@@ -412,6 +415,7 @@ public class ModConfig {
             data.enabletokensintooltips = enabletokensintooltips;
             data.enableEvolutionScrollling = enableEvolutionScrollling;
             data.enableItemFrameSkins = enableItemFrameSkins;
+            data.tapPreview = tapPreview;
             data.previewKey = previewKey;
             data.zoomKey = zoomKey;
             data.shinyKey = shinyKey;
@@ -621,7 +625,10 @@ public class ModConfig {
         //Keybinds stuffs
         ConfigCategory keybinds = builder.getOrCreateCategory(Component.translatable("category.archipelago.keybinds"));
 
-
+        keybinds.addEntry(entryBuilder.startBooleanToggle(Component.translatable("option.archipelago.tap_preview"), tapPreview)
+                .setDefaultValue(false)
+                .setSaveConsumer(newValue -> tapPreview = newValue)
+                .build());
         keybinds.addEntry(entryBuilder.startModifierKeyCodeField(Component.translatable("key.archipelago.preview"), previewKey)
                 .setDefaultValue(previewKey)
                 .setModifierSaveConsumer(newValue -> previewKey = newValue)

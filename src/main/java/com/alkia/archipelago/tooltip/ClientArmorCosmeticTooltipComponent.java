@@ -135,9 +135,9 @@ public class ClientArmorCosmeticTooltipComponent implements ClientTooltipCompone
             finalRenderY = y + (isZoomed ? 64 : 32);
             float yOffset = switch (slot) {
                 case HEAD -> 1.75f;
-                case CHEST -> 1.3f;
-                case LEGS -> 0.85f;
-                case FEET -> 0.15f;
+                case CHEST -> 1.0f;
+                case LEGS -> 0.3f;
+                case FEET -> 0f;
                 default -> 1.0f;
             };
             translation.set(0.0f, yOffset, 0.0f);
@@ -155,6 +155,7 @@ public class ClientArmorCosmeticTooltipComponent implements ClientTooltipCompone
         var matrices = guiGraphics.pose();
         matrices.pushPose();
         matrices.translate(0, 0, 500);
+
         // Finally, renders the dummy
         InventoryScreen.renderEntityInInventory(
                 guiGraphics, (float) (currentX + (isZoomed ? 66 : 34)), (float) finalRenderY, renderScale,
@@ -202,7 +203,9 @@ public class ClientArmorCosmeticTooltipComponent implements ClientTooltipCompone
 
         if (fullSet && !fullSetStacks.isEmpty()) {
             fullSetStacks.forEach((slot, stack) -> {
-                equipWithDebug(dummyStand, slot, stack);
+                if (!stack.isEmpty()) {
+                    equipWithDebug(dummyStand, slot, stack);
+                }
             });
         } else {
             singleItemStacks.forEach((slot, stack) -> equipWithDebug(dummyStand, slot, stack));
