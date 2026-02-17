@@ -36,10 +36,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 @Mixin(ItemFrameRenderer.class)
 public abstract class ItemFrameEntityRendererMixin extends EntityRenderer<ItemFrame> {
@@ -111,7 +108,7 @@ public abstract class ItemFrameEntityRendererMixin extends EntityRenderer<ItemFr
             }
             cache.archipelago$setCachedStateHash(stateHash);
             try {
-                java.util.Optional<CompoundTag> skinTokenOpt = SkinTokenUtil.getSkinTokenTag(stack);
+                Optional<CompoundTag> skinTokenOpt = SkinTokenUtil.getSkinTokenTag(stack);
                 if (skinTokenOpt.isPresent()) {
                     CompoundTag tokenData = skinTokenOpt.get();
 
@@ -206,8 +203,12 @@ public abstract class ItemFrameEntityRendererMixin extends EntityRenderer<ItemFr
                             }
                             PokemonEntity pokemonEntity = new PokemonEntity(itemFrame.level(), pokemon, CobblemonEntities.POKEMON);
                             pokemonEntity.setPos(0, 0, 0);
-                            pokemonEntity.xo = 0; pokemonEntity.yo = 0; pokemonEntity.zo = 0;
-                            pokemonEntity.xOld = 0; pokemonEntity.yOld = 0; pokemonEntity.zOld = 0;
+                            pokemonEntity.xo = 0;
+                            pokemonEntity.yo = 0;
+                            pokemonEntity.zo = 0;
+                            pokemonEntity.xOld = 0;
+                            pokemonEntity.yOld = 0;
+                            pokemonEntity.zOld = 0;
 
                             pokemonEntity.setEnablePoseTypeRecalculation(false);
                             RenderFlags.previewEntities.add(pokemonEntity);

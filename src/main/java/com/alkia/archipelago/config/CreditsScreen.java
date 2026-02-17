@@ -11,7 +11,8 @@ public class CreditsScreen extends Screen {
     private static final List<String> SUPPORTERS = List.of(
             "_stormreign", "Driplocaulus", "AgentExcadrill",
             "PMJP", "Novasam622", "121_Jiggawatts", "MacRaeDog", "Teahoneycat", "SoloGutman",
-            "AnArtchist", "Khan121", "Flabs", "Jesse_Turtles", "Kygron"
+            "AnArtchist", "Khan121", "Flabs", "Jesse_Turtles", "Kygron", "Thumberking", "Lilcardawg",
+            "Spectra82", "K4rina"
     );
 
     public CreditsScreen(Screen parent) {
