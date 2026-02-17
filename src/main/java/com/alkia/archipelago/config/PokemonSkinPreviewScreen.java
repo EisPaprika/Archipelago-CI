@@ -123,7 +123,7 @@ public class PokemonSkinPreviewScreen extends Screen {
         this.addRenderableWidget(Button.builder(Component.literal("Next Anim"), button -> {
             animationIndex++;
             updatePreview();
-        }).bounds(leftX, 110, 150, 20).build());
+        }).bounds(leftX, 110, 75, 20).build());
 
         // Scale Buttons
         this.addRenderableWidget(Button.builder(Component.literal("-"), button -> {
@@ -143,23 +143,23 @@ public class PokemonSkinPreviewScreen extends Screen {
 //            updatePreview();
 //        }).bounds(leftX + 114, 85, 36, 20).build());
 
-//        // Skin Selector Button
-//        this.addRenderableWidget(Button.builder(Component.literal("Cycle Skin"), button -> {
-//            if (!availableSkins.isEmpty()) {
-//                skinIndex++;
-//                SkinResolverUtil.SkinVariation selected = availableSkins.get(Math.abs(skinIndex) % availableSkins.size());
-//                // Find skin- aspect
-//                String skinToken = selected.aspects.stream()
-//                        .filter(a -> a.startsWith("skin-"))
-//                        .findFirst()
-//                        .orElse("");
-//                if (!skinToken.isEmpty()) {
-//                    tokenInput.setValue(skinToken);
-//                } else {
-//                    tokenInput.setValue("");
-//                }
-//            }
-//        }).bounds(leftX, 110, 150, 20).build());
+        // Skin Selector Button
+        this.addRenderableWidget(Button.builder(Component.literal("Cycle Skin"), button -> {
+            if (!availableSkins.isEmpty()) {
+                skinIndex++;
+                SkinResolverUtil.SkinVariation selected = availableSkins.get(Math.abs(skinIndex) % availableSkins.size());
+               // Find skin- aspect
+               String skinToken = selected.aspects.stream()
+                        .filter(a -> a.startsWith("skin-"))
+                        .findFirst()
+                        .orElse("");
+                if (!skinToken.isEmpty()) {
+                    tokenInput.setValue(skinToken);
+                } else {
+                    tokenInput.setValue("");
+                }
+            }
+        }).bounds(leftX + 75, 110, 75,20).build());
 
         this.addRenderableWidget(Button.builder(Component.literal("Back"), button -> {
             if (this.minecraft != null) this.minecraft.setScreen(parent);
@@ -306,7 +306,7 @@ public class PokemonSkinPreviewScreen extends Screen {
                 String[] filteredForms = PokemonUtil.getFilteredForms(species);
                 if (filteredForms.length > 0) {
                     String selectedForm = filteredForms[Math.abs(formIndex) % filteredForms.length];
-                    graphics.drawString(this.font, "Current Form: " + selectedForm, leftX, 165, 0x03e3fc);
+                    graphics.drawString(this.font, "Current Form: " + selectedForm, leftX, 184, 0x03e3fc);
                 }
 
                 List<String> megaList = PokemonUtil.getMegaForms(species);
@@ -314,19 +314,18 @@ public class PokemonSkinPreviewScreen extends Screen {
                 cycleMegaList.add("Normal");
                 cycleMegaList.addAll(megaList);
                 String selectedMega = cycleMegaList.get(Math.abs(megaIndex) % cycleMegaList.size());
-                graphics.drawString(this.font, "Mega Status: " + selectedMega, leftX, 180, 0x03e3fc);
+                graphics.drawString(this.font, "Mega Status: " + selectedMega, leftX, 196, 0x03e3fc);
 
                 if (!selectedAnimation.isEmpty()) {
-                    graphics.drawString(this.font, "Animation: " + selectedAnimation, leftX, 195, 0x03e3fc);
+                    graphics.drawString(this.font, "Animation: " + selectedAnimation, leftX, 208, 0x03e3fc);
                 }
             }
         } catch (Exception ignored) {}
-        // Keeping for future re-implementation
-        //        if (!availableSkins.isEmpty()) {
-        //            SkinResolverUtil.SkinVariation current = availableSkins.get(Math.abs(skinIndex) % availableSkins.size());
-        //            graphics.drawString(this.font, "Skin: " + current.name, leftX, 160, 0x03e3fc);
-        //            graphics.drawString(this.font, (Math.abs(skinIndex) % availableSkins.size() + 1) + "/" + availableSkins.size(), leftX, 170, 0xAAAAAA);
-        //        }
+                if (!availableSkins.isEmpty()) {
+                    SkinResolverUtil.SkinVariation current = availableSkins.get(Math.abs(skinIndex) % availableSkins.size());
+                    graphics.drawString(this.font, "Skin: " + current.name, leftX, 160, 0x03e3fc);
+                    graphics.drawString(this.font, (Math.abs(skinIndex) % availableSkins.size() + 1) + "/" + availableSkins.size(), leftX, 172, 0xAAAAAA);
+                }
 
         if (this.modelWidget != null) {
             if (!selectedAnimation.isEmpty()) {
