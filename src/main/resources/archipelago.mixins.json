@@ -13,9 +13,9 @@
     "InventoryScreenMixin",
     "ItemFrameEntityRendererMixin",
     "ItemStackMixin",
+    "PokemonEntityMixin",
     "PosableStateMixin",
-    "ProfilerSuppressionMixin",
-    "PokemonEntityMixin"
+    "ProfilerSuppressionMixin"
   ],
   "injectors": {
     "defaultRequire": 1

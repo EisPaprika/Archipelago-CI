@@ -6,9 +6,10 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 
-import java.util.Optional;
+import java.util.*;
 
 public class SkinTokenUtil {
+    public static final Set<String> customNicknames = new HashSet<>(List.of("softwaddle"));
     public static Optional<CompoundTag> getSkinTokenTag(ItemStack stack) {
         CustomData customData = stack.get(DataComponents.CUSTOM_DATA);
         if (customData == null) return Optional.empty();

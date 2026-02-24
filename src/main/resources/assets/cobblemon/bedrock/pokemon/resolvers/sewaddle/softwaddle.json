@@ -1,0 +1,23 @@
+{
+  "species": "cobblemon:sewaddle",
+  "order": 1,
+  "variations": [
+    {
+      "aspects": [
+        "nickname-softwaddle"
+      ],
+      "poser": "cobblemon:sewaddle",
+      "model": "cobblemon:softwaddle.geo",
+      "texture": "cobblemon:textures/pokemon/sewaddle/softwaddle.png"
+    },
+    {
+      "aspects": [
+        "nickname-softwaddle",
+        "shiny"
+      ],
+      "poser": "cobblemon:sewaddle",
+      "model": "cobblemon:softwaddle.geo",
+      "texture": "cobblemon:textures/pokemon/sewaddle/softwaddle_shiny.png"
+    }
+  ]
+}
