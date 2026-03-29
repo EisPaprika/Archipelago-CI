@@ -112,13 +112,7 @@ public abstract class ItemFrameEntityRendererMixin extends EntityRenderer<ItemFr
                 if (skinTokenOpt.isPresent()) {
                     CompoundTag tokenData = skinTokenOpt.get();
 
-                    List<String> whitelistIds = new ArrayList<>();
-                    if (tokenData.contains("whitelist")) {
-                        ListTag whitelist = tokenData.getList("whitelist", Tag.TAG_STRING);
-                        for (int i = 0; i < whitelist.size(); i++) {
-                            whitelistIds.add(whitelist.getString(i));
-                        }
-                    }
+                    List<String> whitelistIds = PokemonUtil.getWhitelistFromToken(tokenData);
 
                     if (!whitelistIds.isEmpty()) {
                         List<String> aspects = PokemonUtil.getAspectsFromToken(tokenData);

@@ -247,7 +247,7 @@ public class ClientPokemonSkinTooltipComponent implements ClientTooltipComponent
 
                 //I HATE MATHS
 
-                if (ModConfig.enablePreviewBackground) {
+                if (ModConfig.enablePreviewBackground && !RenderFlags.isRenderingJade) {
                     int boxSize = (isZoomed ? 128 : 64) + boxSizeAdjustment;
                     int x1 = currentX - 6;
                     int yOffsetBox = isZoomed ? 25 : 15;
@@ -261,7 +261,11 @@ public class ClientPokemonSkinTooltipComponent implements ClientTooltipComponent
                 var matrices = guiGraphics.pose();
                 matrices.pushPose();
 
-                matrices.translate(currentX + finalXOffset, y + finalYOffset, 500);
+                float yTranslation = y + finalYOffset;
+                if (RenderFlags.isRenderingJade) {
+                    yTranslation -= (isZoomed ? 64 : 32);
+                }
+                matrices.translate(currentX + finalXOffset, yTranslation, 500);
                 matrices.scale(finalScale, finalScale, 1.0f);
 
                 guiGraphics.renderItem(pokemonStack, 0, 0);

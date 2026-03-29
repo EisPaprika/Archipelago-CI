@@ -16,6 +16,25 @@ public class KeyUtil {
     // Helper for checking if keys are pressed. Used for skin token shenanigans.
     private static final Map<Integer, Boolean> KEY_STATES = new HashMap<>();
 
+    private static boolean previewToggled = false;
+    private static boolean lastPreviewToggled = false;
+
+    public static boolean isPreviewActive() {
+        boolean previewing = isModifierKeyDown(com.alkia.archipelago.config.ModConfig.previewKey);
+
+        if (com.alkia.archipelago.config.ModConfig.tapPreview) {
+            if (previewing && !lastPreviewToggled) {
+                previewToggled = !previewToggled;
+            }
+            lastPreviewToggled = previewing;
+            return previewToggled;
+        } else {
+            previewToggled = false;
+            lastPreviewToggled = previewing;
+            return previewing;
+        }
+    }
+
     public static boolean wasModifierKeyPressed(ModifierKeyCode modKey) {
         if (modKey.getKeyCode() == InputConstants.UNKNOWN) return false;
 

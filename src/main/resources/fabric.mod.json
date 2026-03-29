@@ -17,7 +17,8 @@
     "client": [
       "com.alkia.archipelago.FabricModClient"
     ],
-    "modmenu": ["com.alkia.archipelago.config.ArchipelagoModMenuApiImpl"]
+    "modmenu": ["com.alkia.archipelago.config.ArchipelagoModMenuApiImpl"],
+    "jade": ["com.alkia.archipelago.jade.ArchiJadePlugin"]
   },
   "mixins": [
     "archipelago.mixins.json"

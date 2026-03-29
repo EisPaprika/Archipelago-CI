@@ -6,5 +6,6 @@ import java.util.WeakHashMap;
 
 public class RenderFlags {
     public static volatile boolean isRenderingSkinPreview = false;
+    public static volatile boolean isRenderingJade = false;
     public static final Set<Object> previewEntities = Collections.newSetFromMap(new WeakHashMap<>());
 }

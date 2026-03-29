@@ -28,12 +28,14 @@ repositories {
     maven("https://oss.sonatype.org/content/repositories/snapshots")
     maven ("https://maven.shedaniel.me/")
     maven ("https://maven.terraformersmc.com/releases/")
+    maven (url = "https://api.modrinth.com/maven")
 }
 
 dependencies {
     minecraft("net.minecraft:minecraft:1.21.1")
     mappings(loom.officialMojangMappings())
     modImplementation("net.fabricmc:fabric-loader:0.17.2")
+    modImplementation("maven.modrinth:jade:15.10.0+fabric")
 
     modRuntimeOnly("net.fabricmc.fabric-api:fabric-api:0.116.6+1.21.1")
     modImplementation(fabricApi.module("fabric-command-api-v2", "0.116.6+1.21.1"))

@@ -2,62 +2,38 @@ package com.alkia.archipelago.mixin;
 
 import com.alkia.archipelago.config.ModConfig;
 import com.alkia.archipelago.tooltip.ArmorCosmeticTooltipComponent;
+import com.alkia.archipelago.tooltip.PokemonSkinTooltipComponent;
 import com.alkia.archipelago.util.KeyUtil;
+import com.alkia.archipelago.util.PokemonUtil;
+import com.alkia.archipelago.util.SkinTokenUtil;
 import com.alkia.archipelago.util.PolymerItemUtil;
 import net.minecraft.ChatFormatting;
-
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.tooltip.TooltipComponent;
 import net.minecraft.world.item.*;
 import net.minecraft.world.item.component.CustomData;
-import com.alkia.archipelago.tooltip.PokemonSkinTooltipComponent;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 @Mixin(ItemStack.class)
 public abstract class ItemStackMixin {
 
-    @Unique
-    private static boolean archipelago$previewToggled = false;
-    @Unique
-    private static boolean archipelago$lastPreviewToggled = false;
-
-    @Unique
-    private static boolean archipelago$isPreviewActive() {
-        boolean previewing = KeyUtil.isModifierKeyDown(ModConfig.previewKey);
-
-        if (ModConfig.tapPreview) {
-            if (previewing && !archipelago$lastPreviewToggled) {
-                archipelago$previewToggled = !archipelago$previewToggled;
-            }
-            archipelago$lastPreviewToggled = previewing;
-            return archipelago$previewToggled;
-        } else {
-            archipelago$previewToggled = false;
-            archipelago$lastPreviewToggled = previewing;
-            return previewing;
-        }
-    }
     @Inject(method = "getTooltipLines", at = @At("RETURN"))
     private void addShiftPrompt(Item.TooltipContext context, Player player, TooltipFlag tooltipFlag, CallbackInfoReturnable<List<Component>> cir) {
-        boolean isPokemonSkin = getSkinTokenTag().isPresent();
+        ItemStack stack = (ItemStack) (Object) this;
+        boolean isPokemonSkin = SkinTokenUtil.getSkinTokenTag(stack).isPresent();
         boolean isArmorCosmetic = false;
 
-        ItemStack stack = (ItemStack) (Object) this;
         String polymerId = PolymerItemUtil.getPolymerId(stack);
         if (polymerId != null && !getArmorSlot(polymerId).isEmpty()) {
             isArmorCosmetic = true;
@@ -70,7 +46,7 @@ public abstract class ItemStackMixin {
             String pressOrHold = ModConfig.tapPreview ? "Press " : "Hold ";
             tooltip.add(Component.literal(pressOrHold + previewKeyName + " for Preview").withStyle(ChatFormatting.AQUA));
 
-            if (archipelago$isPreviewActive()) {
+            if (KeyUtil.isPreviewActive()) {
                 if (isPokemonSkin) {
                     String zoomKeyName = ModConfig.zoomKey.getLocalizedName().getString();
                     String shinyKeyName = ModConfig.shinyKey.getLocalizedName().getString();
@@ -93,15 +69,11 @@ public abstract class ItemStackMixin {
             }
         }
 
-        getSkinTokenTag().ifPresent(tag -> {
+        SkinTokenUtil.getSkinTokenTag(stack).ifPresent(tag -> {
             List<Component> tooltip = cir.getReturnValue();
             if (ModConfig.enabletokensintooltips) {
-                if (tag.contains("aspects", Tag.TAG_LIST)) {
-                    ListTag aspects = tag.getList("aspects", Tag.TAG_STRING);
-                    for (int i = 0; i < aspects.size(); i++) {
-                        String skinId = aspects.getString(i).replace('=', '-');
-                        tooltip.add(Component.literal("Skin ID: " + skinId).withStyle(ChatFormatting.GOLD));
-                    }
+                for (String skinId : PokemonUtil.getNormalAspectsFromToken(tag)) {
+                    tooltip.add(Component.literal("Skin ID: " + skinId).withStyle(ChatFormatting.GOLD));
                 }
             }
         });
@@ -109,36 +81,17 @@ public abstract class ItemStackMixin {
 
     @Inject(method = "getTooltipImage", at = @At("HEAD"), cancellable = true)
     private void injectPokemonSkinTooltip(CallbackInfoReturnable<Optional<TooltipComponent>> cir) {
-        if (!archipelago$isPreviewActive()) return;
+        if (!KeyUtil.isPreviewActive()) return;
 
-        getSkinTokenTag()
-                .flatMap(this::createPokemonSkinComponent)
+        SkinTokenUtil.getSkinTokenTag((ItemStack) (Object) this)
+                .flatMap(PokemonUtil::createPokemonSkinComponent)
                 .ifPresent(component -> cir.setReturnValue(Optional.of(component)));
     }
 
-    private Optional<CompoundTag> getSkinTokenTag() {
-        ItemStack stack = (ItemStack) (Object) this;
-        CustomData customData = stack.get(DataComponents.CUSTOM_DATA);
-        if (customData == null) return Optional.empty();
-
-        CompoundTag nbt = customData.copyTag();
-        if (nbt.contains("islander:skin_token", Tag.TAG_COMPOUND)) {
-            return Optional.of(nbt.getCompound("islander:skin_token"));
-        }
-
-        if (nbt.contains("$polymer:stack", Tag.TAG_COMPOUND)) {
-            CompoundTag components = nbt.getCompound("$polymer:stack").getCompound("components");
-            if (components.contains("islander:skin_token", Tag.TAG_COMPOUND)) {
-                return Optional.of(components.getCompound("islander:skin_token"));
-            }
-        }
-
-        return Optional.empty();
-    }
 
     @Inject(method = "getTooltipImage", at = @At("HEAD"), cancellable = true)
     private void injectArmorCosmeticTooltip(CallbackInfoReturnable<Optional<TooltipComponent>> cir) {
-        if (!archipelago$isPreviewActive()) return;
+        if (!KeyUtil.isPreviewActive()) return;
 
         ItemStack stack = (ItemStack) (Object) this;
         String polymerId = PolymerItemUtil.getPolymerId(stack);
@@ -177,39 +130,6 @@ public abstract class ItemStackMixin {
                 cir.setReturnValue(Optional.of(new ArmorCosmeticTooltipComponent(polymerId, slot, setName)));
             }
         }
-    }
-
-    private Optional<TooltipComponent> createPokemonSkinComponent(CompoundTag skinToken) {
-        List<String> pokemonIds = new ArrayList<>();
-        //Grabbing Pokemon Species
-        if (skinToken.contains("whitelist", Tag.TAG_LIST)) {
-            ListTag whitelist = skinToken.getList("whitelist", Tag.TAG_STRING);
-            for (int i = 0; i < whitelist.size(); i++) {
-                pokemonIds.add(whitelist.getString(i));
-            }
-        }
-
-        //Grabbing Pokemon Form
-        List<String> whitelistAspects = new ArrayList<>();
-        if (skinToken.contains("whitelist_aspects", Tag.TAG_LIST)) {
-            ListTag whitelistAspectsTag = skinToken.getList("whitelist_aspects", Tag.TAG_STRING);
-            for (int i = 0; i < whitelistAspectsTag.size(); i++) {
-                whitelistAspects.add(whitelistAspectsTag.getString(i));
-            }
-        }
-        //Grabbing Pokemon Skins
-        List<String> aspects = new ArrayList<>();
-        if (skinToken.contains("aspects", Tag.TAG_LIST)) {
-            ListTag aspectsTag = skinToken.getList("aspects", Tag.TAG_STRING);
-            for (int i = 0; i < aspectsTag.size(); i++) {
-                aspects.add(aspectsTag.getString(i).replace('=', '-'));
-            }
-        }
-
-        if (!pokemonIds.isEmpty() && !aspects.isEmpty()) {
-            return Optional.of(new PokemonSkinTooltipComponent(pokemonIds, aspects, whitelistAspects));
-        }
-        return Optional.empty();
     }
 
     //Getting armor slot, tried grabbing just ids that contain _helmet etc. But the rainy days goomy hat decided it felt quirky

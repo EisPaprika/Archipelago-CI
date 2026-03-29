@@ -9,8 +9,17 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
+import net.minecraft.core.component.DataComponents;
+import com.cobblemon.mod.common.item.PokemonItem;
+import com.alkia.archipelago.tooltip.PokemonSkinTooltipComponent;
+import net.minecraft.world.inventory.tooltip.TooltipComponent;
+import java.util.Optional;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 
 
 public class PokemonUtil {
@@ -21,25 +30,82 @@ public class PokemonUtil {
         return raw == null ? "" : raw.replace("=", "-");
     }
 
+    public static List<String> getWhitelistFromToken(CompoundTag tag) {
+        List<String> list = new ArrayList<>();
+        if (tag.contains("whitelist", Tag.TAG_LIST)) {
+            ListTag tagList = tag.getList("whitelist", Tag.TAG_STRING);
+            for (int i = 0; i < tagList.size(); i++) {
+                list.add(tagList.getString(i));
+            }
+        }
+        return list;
+    }
+
+    public static List<String> getWhitelistAspectsFromToken(CompoundTag tag) {
+        List<String> list = new ArrayList<>();
+        if (tag.contains("whitelist_aspects", Tag.TAG_LIST)) {
+            ListTag tagList = tag.getList("whitelist_aspects", Tag.TAG_STRING);
+            for (int i = 0; i < tagList.size(); i++) {
+                list.add(normalizeAspect(tagList.getString(i)));
+            }
+        }
+        return list;
+    }
+
+    public static List<String> getNormalAspectsFromToken(CompoundTag tag) {
+        List<String> list = new ArrayList<>();
+        if (tag.contains("aspects", Tag.TAG_LIST)) {
+            ListTag tagList = tag.getList("aspects", Tag.TAG_STRING);
+            for (int i = 0; i < tagList.size(); i++) {
+                list.add(normalizeAspect(tagList.getString(i)));
+            }
+        }
+        return list;
+    }
+
     /**
      * Extracts and Normalized aspects from a Skin Token
      */
 
     public static List<String> getAspectsFromToken(CompoundTag tokenData) {
         List<String> aspects = new ArrayList<>();
-        if (tokenData.contains("aspects", Tag.TAG_LIST)) {
-            ListTag aspectsTag = tokenData.getList("aspects", Tag.TAG_STRING);
-            for (int i = 0; i < aspectsTag.size(); i++) {
-                aspects.add(normalizeAspect(aspectsTag.getString(i)));
-            }
-        }
-        if (tokenData.contains("whitelist_aspects", Tag.TAG_LIST)) {
-            ListTag whitelistAspectsTag = tokenData.getList("whitelist_aspects", Tag.TAG_STRING);
-            for (int i = 0; i < whitelistAspectsTag.size(); i++) {
-                aspects.add(normalizeAspect(whitelistAspectsTag.getString(i)));
-            }
-        }
+        aspects.addAll(getNormalAspectsFromToken(tokenData));
+        aspects.addAll(getWhitelistAspectsFromToken(tokenData));
         return aspects;
+    }
+
+    /**
+     * Creates an ItemStack for a Pokemon representing the provided Skin Token
+     */
+    public static ItemStack getPokemonStackFromToken(CompoundTag tag) {
+        List<String> whitelist = getWhitelistFromToken(tag);
+        if (whitelist.isEmpty()) return ItemStack.EMPTY;
+
+        Species species = getSpecies(whitelist.get(0));
+        if (species == null) return ItemStack.EMPTY;
+
+        List<String> aspects = getAspectsFromToken(tag);
+        ItemStack pokemonStack = PokemonItem.from(species, new HashSet<>(aspects), 1, null);
+
+        CompoundTag wrapper = new CompoundTag();
+        wrapper.put("islander:skin_token", tag);
+        pokemonStack.set(DataComponents.CUSTOM_DATA, CustomData.of(wrapper));
+
+        return pokemonStack;
+    }
+
+    /**
+     * Creates a TooltipComponent for a Skin Token
+     */
+    public static Optional<TooltipComponent> createPokemonSkinComponent(CompoundTag skinToken) {
+        List<String> pokemonIds = getWhitelistFromToken(skinToken);
+        List<String> whitelistAspects = getWhitelistAspectsFromToken(skinToken);
+        List<String> aspects = getNormalAspectsFromToken(skinToken);
+
+        if (!pokemonIds.isEmpty() && !aspects.isEmpty()) {
+            return Optional.of(new PokemonSkinTooltipComponent(pokemonIds, aspects, whitelistAspects));
+        }
+        return Optional.empty();
     }
 
     /**
