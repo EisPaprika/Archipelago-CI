@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "com.alkia.archipelago"
-version = "1.7.3"
+version = "1.7.4"
 
 architectury {
     platformSetupLoomIde()

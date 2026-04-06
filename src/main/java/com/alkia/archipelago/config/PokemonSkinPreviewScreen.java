@@ -24,6 +24,7 @@ public class PokemonSkinPreviewScreen extends Screen {
     private final Screen parent;
     private EditBox pokemonInput;
     private EditBox tokenInput;
+    private EditBox aspectInput;
     private Checkbox shinyCheckbox;
     private int formIndex = 0;
     private int megaIndex = 0;
@@ -69,6 +70,10 @@ public class PokemonSkinPreviewScreen extends Screen {
             if (this.tokenInput != null) {
                 this.tokenInput.setValue("");
             }
+            // Reset aspect
+            if  (this.aspectInput != null) {
+                this.aspectInput.setValue("");
+            }
             updatePreview();
         });
         this.pokemonInput.setMaxLength(2048);
@@ -87,6 +92,19 @@ public class PokemonSkinPreviewScreen extends Screen {
         this.tokenInput.setMaxLength(2048);
         this.addRenderableWidget(this.tokenInput);
 
+        // Aspect input
+        this.aspectInput = new EditBox(this.font, leftX, 95, 150, 20, Component.literal("Aspect"));
+        this.aspectInput.setResponder(text -> {
+            rotationY = 35f;
+            if (this.modelWidget != null) {
+                this.modelWidget.setRotationY(this.rotationY);
+                this.modelWidget.getRotationVector().set(13.0f, this.rotationY, 0.0f);
+            }
+            updatePreview();
+        });
+        this.aspectInput.setMaxLength(2048);
+        this.addRenderableWidget(this.aspectInput);
+
         // Form Cycle Button
         this.addRenderableWidget(Button.builder(Component.literal("Next Form"), button -> {
             formIndex++;
@@ -96,7 +114,7 @@ public class PokemonSkinPreviewScreen extends Screen {
                 this.modelWidget.getRotationVector().set(13.0f, this.rotationY, 0.0f);
             }
             updatePreview();
-        }).bounds(leftX, 85, 75, 20).build());
+        }).bounds(leftX, 120, 75, 20).build());
 
         // Shiny Checkbox
         this.shinyCheckbox = Checkbox.builder(Component.literal("Shiny"), this.font)
@@ -121,25 +139,25 @@ public class PokemonSkinPreviewScreen extends Screen {
                 this.modelWidget.getRotationVector().set(13.0f, this.rotationY, 0.0f);
             }
             updatePreview();
-        }).bounds(leftX + 75, 85, 75, 20).build());
+        }).bounds(leftX + 75, 120, 75, 20).build());
 
         // Animation Button
         this.addRenderableWidget(Button.builder(Component.literal("Next Anim"), button -> {
             animationIndex++;
             updatePreview();
-        }).bounds(leftX, 110, 75, 20).build());
+        }).bounds(leftX, 145, 75, 20).build());
 
         // Scale Buttons
         this.addRenderableWidget(Button.builder(Component.literal("-"), button -> {
             modelScale = Math.max(0.5f, modelScale - 0.5f);
             
             updatePreview();
-        }).bounds(leftX, this.height - 30, 20, 20).build());
+        }).bounds(this.width - 55, this.height - 30, 20, 20).build());
 
         this.addRenderableWidget(Button.builder(Component.literal("+"), button -> {
             modelScale = Math.min(20.0f, modelScale + 0.5f);
             updatePreview();
-        }).bounds(leftX + 25, this.height - 30, 20, 20).build());
+        }).bounds(this.width -  30, this.height - 30, 20, 20).build());
 
 //        // Gmax Button
 //        this.addRenderableWidget(Button.builder(Component.literal("Gmax"), button -> {
@@ -166,11 +184,11 @@ public class PokemonSkinPreviewScreen extends Screen {
                     tokenInput.setValue(skinToken);
                 }
             }
-        }).bounds(leftX + 75, 110, 75,20).build());
+        }).bounds(leftX + 75, 145, 75,20).build());
 
         this.addRenderableWidget(Button.builder(Component.literal("Back"), button -> {
             if (this.minecraft != null) this.minecraft.setScreen(parent);
-        }).bounds(leftX, 135, 150, 20).build());
+        }).bounds(leftX, 170, 150, 20).build());
 
         updateAvailableSkins();
         updatePreview();
@@ -227,6 +245,7 @@ public class PokemonSkinPreviewScreen extends Screen {
     private void updatePreview() {
         String speciesName = pokemonInput.getValue().toLowerCase().trim();
         String token = tokenInput.getValue().trim();
+        String extraaspects = aspectInput.getValue().trim();
 
         try {
             Species species = PokemonUtil.getSpecies(speciesName);
@@ -238,6 +257,15 @@ public class PokemonSkinPreviewScreen extends Screen {
                 }
                 if (shinyCheckbox != null && shinyCheckbox.selected()) {
                     aspects.add("shiny");
+                }
+                // new stuffs for appending custom aspects
+                if (!extraaspects.isEmpty()) {
+                    for (String aspect : extraaspects.split(" ")) {
+                        // Probably don't need to do this(?) but just in case
+                        if (!aspect.isEmpty()) {
+                            aspects.add(PokemonUtil.normalizeAspect(aspect.toLowerCase()));
+                        }
+                    }
                 }
 
                 String[] filteredForms = PokemonUtil.getFilteredForms(species);
@@ -304,7 +332,10 @@ public class PokemonSkinPreviewScreen extends Screen {
         graphics.drawCenteredString(this.font, this.title, this.width / 2, 10, 0xFFFFFF);
         graphics.drawString(this.font, "Pokemon Name", leftX, 15, 0xAAAAAA);
         graphics.drawString(this.font, "Skin Token ID", leftX, 50, 0xAAAAAA);
-        graphics.drawString(this.font, String.format("Scale: %.1f", modelScale), leftX + 50, this.height - 25, 0xAAAAAA);
+        // Added to deal with alignment issues since I moved the scaling stuff to the right side
+        String scaleText = String.format("Scale: %.1f", modelScale);
+        graphics.drawString(this.font, scaleText, this.width - 60 - this.font.width(scaleText), this.height - 25, 0xAAAAAA);
+        graphics.drawString(this.font, "Additional Aspects", leftX, 85, 0xAAAAAA);
 
         try {
             String speciesName = pokemonInput.getValue().toLowerCase().trim();
@@ -313,7 +344,7 @@ public class PokemonSkinPreviewScreen extends Screen {
                 String[] filteredForms = PokemonUtil.getFilteredForms(species);
                 if (filteredForms.length > 0) {
                     String selectedForm = filteredForms[Math.abs(formIndex) % filteredForms.length];
-                    graphics.drawString(this.font, "Current Form: " + selectedForm, leftX, 184, 0x03e3fc);
+                    graphics.drawString(this.font, "Current Form: " + selectedForm, leftX, 219, 0x03e3fc);
                 }
 
                 List<String> megaList = PokemonUtil.getMegaForms(species);
@@ -321,10 +352,10 @@ public class PokemonSkinPreviewScreen extends Screen {
                 cycleMegaList.add("Normal");
                 cycleMegaList.addAll(megaList);
                 String selectedMega = cycleMegaList.get(Math.abs(megaIndex) % cycleMegaList.size());
-                graphics.drawString(this.font, "Mega Status: " + selectedMega, leftX, 196, 0x03e3fc);
+                graphics.drawString(this.font, "Mega Status: " + selectedMega, leftX, 231, 0x03e3fc);
 
                 if (!selectedAnimation.isEmpty()) {
-                    graphics.drawString(this.font, "Animation: " + selectedAnimation, leftX, 208, 0x03e3fc);
+                    graphics.drawString(this.font, "Animation: " + selectedAnimation, leftX, 243, 0x03e3fc);
                 }
             }
         } catch (Exception ignored) {}
@@ -334,12 +365,13 @@ public class PokemonSkinPreviewScreen extends Screen {
                     int currentSkin = Math.abs(skinIndex) % totalSkins;
 
                     if (currentSkin == 0) {
-                        graphics.drawString(this.font, "Skin: None", leftX, 160, 0x03e3fc);
-                        graphics.drawString(this.font, "0/" + skins, leftX, 172, 0xAAAAAA);
+                        // Specifically for base non-skin, since otherwise it just showed whatever skin was first in the array
+                        graphics.drawString(this.font, "Skin: None", leftX, 195, 0x03e3fc);
+                        graphics.drawString(this.font, "0/" + skins, leftX, 207, 0xAAAAAA);
                     } else {
                         SkinResolverUtil.SkinVariation current = availableSkins.get(currentSkin - 1);
-                        graphics.drawString(this.font, "Skin: " + current.name, leftX, 160, 0x03e3fc);
-                        graphics.drawString(this.font, currentSkin + "/" + skins, leftX, 172, 0xAAAAAA);
+                        graphics.drawString(this.font, "Skin: " + current.name, leftX, 195, 0x03e3fc);
+                        graphics.drawString(this.font, currentSkin + "/" + skins, leftX, 207, 0xAAAAAA);
                     }
                 }
 
