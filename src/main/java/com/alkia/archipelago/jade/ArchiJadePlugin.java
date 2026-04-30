@@ -9,7 +9,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.decoration.GlowItemFrame;
 import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.inventory.tooltip.TooltipComponent;
@@ -28,11 +27,9 @@ public class ArchiJadePlugin implements IWailaPlugin {
     // Jade Registration
     public void registerClient(IWailaClientRegistration registration) {
         registration.registerEntityComponent(SkinTokenJadeProvider.INSTANCE, ItemFrame.class);
-        registration.registerEntityComponent(SkinTokenJadeProvider.INSTANCE, GlowItemFrame.class);
         registration.registerEntityComponent(SkinTokenJadeProvider.INSTANCE, ItemEntity.class);
 
         registration.registerEntityIcon(SkinTokenJadeProvider.INSTANCE, ItemFrame.class);
-        registration.registerEntityIcon(SkinTokenJadeProvider.INSTANCE, GlowItemFrame.class);
         registration.registerEntityIcon(SkinTokenJadeProvider.INSTANCE, ItemEntity.class);
     }
 }
