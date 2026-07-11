@@ -5,6 +5,7 @@ import com.alkia.archipelago.util.PokemonUtil;
 import com.alkia.archipelago.util.RenderFlags;
 import com.alkia.archipelago.util.SkinTokenUtil;
 import com.cobblemon.mod.common.CobblemonEntities;
+import com.cobblemon.mod.common.entity.PoseType;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 import com.cobblemon.mod.common.pokemon.Pokemon;
 import com.cobblemon.mod.common.pokemon.Species;
@@ -61,7 +62,18 @@ public abstract class ItemFrameEntityRendererMixin extends EntityRenderer<ItemFr
             RenderFlags.isRenderingSkinPreview = false;
         }
     }
-
+    @Unique
+    String getAttackAnimInstrument(NoteBlockInstrument instrument) {
+        if (instrument == null) return null;
+        return switch (instrument) {
+            case BASS -> "physical";
+            case FLUTE -> "special";
+            case SNARE -> "status";
+            case HAT -> "recoil";
+            case BELL -> "cry";
+            default -> null;
+        };
+    }
     @Unique
     private void renderCobblemonInFrameInternal(ItemFrame itemFrame, float entityYaw, float tickDelta, PoseStack matrices, MultiBufferSource buffer, int light, CallbackInfo ci, ItemStack stack, ItemFrameCache cache) {
         // Note Block Logic
@@ -78,6 +90,13 @@ public abstract class ItemFrameEntityRendererMixin extends EntityRenderer<ItemFr
         BlockPos activatorPos = blockBehind.below();
         BlockPos depthPos = activatorPos.below();
         BlockState depthState = itemFrame.level().getBlockState(depthPos);
+        BlockState activatorState = itemFrame.level().getBlockState(activatorPos);
+        boolean hasAttackAnimBlock = activatorState.is(Blocks.NOTE_BLOCK);
+        NoteBlockInstrument attackInstrument = null;
+        if(hasAttackAnimBlock) {
+            attackInstrument = activatorState.getValue(NoteBlock.INSTRUMENT);
+        }
+
 
         boolean hasNoteBlock2 = depthState.is(Blocks.NOTE_BLOCK);
         int note2 = 0;
@@ -87,13 +106,22 @@ public abstract class ItemFrameEntityRendererMixin extends EntityRenderer<ItemFr
             instrument2 = depthState.getValue(NoteBlock.INSTRUMENT);
         }
 
+        BlockPos heightPos = depthPos.below();
+        BlockState heightState = itemFrame.level().getBlockState(heightPos);
+        boolean hasHeightBlock = heightState.is(Blocks.NOTE_BLOCK);
+        int heightNote = 0;
+        if (hasHeightBlock) {
+            heightNote = heightState.getValue(NoteBlock.NOTE);
+        }
+
         if (hasNoteBlock) {
             instrument = blockState.getValue(NoteBlock.INSTRUMENT);
             note = blockState.getValue(NoteBlock.NOTE);
 
-            // Use a more stable hash for the stack that only cares about the skin data
+
             int stackContentHash = SkinTokenUtil.getSkinTokenTag(stack).map(CompoundTag::hashCode).orElse(stack.getItem().hashCode());
-            stateHash = Objects.hash(instrument, note, stackContentHash, isGlowFrame, activatorPos.hashCode(), depthState.getBlock(), hasNoteBlock2, instrument2, note2);
+            stateHash = Objects.hash(instrument, note, stackContentHash, isGlowFrame, activatorPos.hashCode(), depthState.getBlock(), hasNoteBlock2, instrument2, note2, attackInstrument, hasHeightBlock, heightNote);
+
         } else {
             return;
         }
@@ -220,12 +248,15 @@ public abstract class ItemFrameEntityRendererMixin extends EntityRenderer<ItemFr
                                 if (!poses.isEmpty()) {
                                     int poseIndex = note % poses.size();
                                     String pose = poses.get(poseIndex);
+                                    String attackAnim = getAttackAnimInstrument(attackInstrument);
+                                    cache.archipelago$setActiveAttackAnim(attackAnim);
                                     if (!Objects.equals(cache.archipelago$getActivePose(), pose)) {
                                         cache.archipelago$setActivePose(pose);
+
                                         delegate.setPose(pose);
 
                                         // Sync the entity data if it matches a PoseType to prevent validatePose override
-                                        com.cobblemon.mod.common.entity.PoseType type = PokemonUtil.getPoseType(pose, posableModel);
+                                        PoseType type = PokemonUtil.getPoseType(pose, posableModel);
 
                                         if (type != null) {
                                             pokemonEntity.getEntityData().set(PokemonEntity.Companion.getPOSE_TYPE(), type);
@@ -262,9 +293,16 @@ public abstract class ItemFrameEntityRendererMixin extends EntityRenderer<ItemFr
             if (clientDelegate.getCurrentModel() == null) {
                 clientDelegate.setCurrentModel(VaryingModelRepository.INSTANCE.getPoser(cachedPokemonEntity.getPokemon().getSpecies().getResourceIdentifier(), clientDelegate));
             }
-
             clientDelegate.setCurrentAspects(new HashSet<>(cachedPokemonEntity.getPokemon().getAspects()));
-
+            String attackAnim = cache.archipelago$getActiveAttackAnim();
+            if (attackAnim != null && !attackAnim.isEmpty()) {
+                if (!cachedPokemonEntity.isBattling()) {
+                    cachedPokemonEntity.setBattleId(java.util.UUID.randomUUID());
+                }
+                if (clientDelegate.getPrimaryAnimation() == null) {
+                    clientDelegate.addFirstAnimation(java.util.Set.of(attackAnim));
+                }
+            }
             // Forces pose, just in case.
             String activePose = cache.archipelago$getActivePose();
             if (activePose != null && !activePose.isEmpty()) {
@@ -326,7 +364,8 @@ public abstract class ItemFrameEntityRendererMixin extends EntityRenderer<ItemFr
                 matrices.translate(0.0, 0.0, 0.4375); // Adjusted translation
             }
 
-            matrices.translate(0.0, 0.3, 0.0);
+            float heightOffset = hasHeightBlock ? (float) heightNote : 0.0f;
+            matrices.translate(0.0, 0.3 + heightOffset, 0.0);
 
             Minecraft.getInstance().getEntityRenderDispatcher().render(
                     cachedPokemonEntity,

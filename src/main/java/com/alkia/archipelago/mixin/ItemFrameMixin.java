@@ -16,6 +16,8 @@ public class ItemFrameMixin implements ItemFrameCache {
     private String activePose = "";
     @Unique
     private int cachedStateHash = 0;
+    @Unique
+    private String activeAttackAnim = null;
 
     @Override
     public PokemonEntity archipelago$getCachedEntity() {
@@ -41,4 +43,10 @@ public class ItemFrameMixin implements ItemFrameCache {
     public void archipelago$setCachedStateHash(int hash) {
         this.cachedStateHash = hash;
     }
+    @Override
+    public String archipelago$getActiveAttackAnim() {
+        return activeAttackAnim;
+    }
+    @Override
+    public void archipelago$setActiveAttackAnim(String anim) {this.activeAttackAnim = anim;}
 }

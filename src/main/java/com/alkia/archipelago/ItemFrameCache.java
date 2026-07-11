@@ -11,4 +11,7 @@ public interface ItemFrameCache {
     // Note block stuffs
     int archipelago$getCachedStateHash();
     void archipelago$setCachedStateHash(int hash);
+    // battle anims
+    String archipelago$getActiveAttackAnim();
+    void archipelago$setActiveAttackAnim(String anim);
 }

@@ -1,9 +1,12 @@
 package com.alkia.archipelago.config;
 
+import com.alkia.archipelago.util.ArchipelagoPosableState;
 import com.alkia.archipelago.util.PokemonUtil;
 import com.alkia.archipelago.util.RenderFlags;
 import com.alkia.archipelago.util.SkinResolverUtil;
+import com.bedrockk.molang.runtime.value.DoubleValue;
 import com.cobblemon.mod.common.client.render.models.blockbench.PosableModel;
+import com.cobblemon.mod.common.client.render.models.blockbench.PosableState;
 import com.cobblemon.mod.common.client.render.models.blockbench.repository.VaryingModelRepository;
 import com.cobblemon.mod.common.pokemon.RenderablePokemon;
 import com.cobblemon.mod.common.pokemon.Species;
@@ -40,6 +43,7 @@ public class PokemonSkinPreviewScreen extends Screen {
     private List<SkinResolverUtil.SkinVariation> availableSkins = new ArrayList<>();
     private String lastSpecies = "";
     private List<String> cachedPoses = new ArrayList<>();
+    private String lastTriggeredAnimation  = "";
 
     public PokemonSkinPreviewScreen(Screen parent) {
         super(Component.literal("Pokemon Skin Previewer"));
@@ -146,6 +150,11 @@ public class PokemonSkinPreviewScreen extends Screen {
             animationIndex++;
             updatePreview();
         }).bounds(leftX, 145, 75, 20).build());
+
+        // Replay Animation Button
+        this.addRenderableWidget(Button.builder(Component.literal("Replay Animation"), button ->
+        { lastTriggeredAnimation = "";
+        }).bounds(this.width - 130, this.height - 50, 120, 20).build());
 
         // Scale Buttons
         this.addRenderableWidget(Button.builder(Component.literal("-"), button -> {
@@ -289,6 +298,8 @@ public class PokemonSkinPreviewScreen extends Screen {
                     PosableModel model = VaryingModelRepository.INSTANCE.getPoser(species.getResourceIdentifier(), this.modelWidget.getState());
                     if (model != null) {
                         List<String> poses = new ArrayList<>(model.getPoses().keySet());
+                        List<String> battleAnims = new ArrayList<>(model.getAnimations().keySet());
+                        poses.addAll(battleAnims);
                         poses.sort((a, b) -> {
                             String aLower = a.toLowerCase();
                             String bLower = b.toLowerCase();
@@ -377,13 +388,29 @@ public class PokemonSkinPreviewScreen extends Screen {
 
         if (this.modelWidget != null) {
             if (!selectedAnimation.isEmpty()) {
-                ((com.alkia.archipelago.util.ArchipelagoPosableState) (Object) this.modelWidget.getState()).archipelago$setForcedPose(selectedAnimation);
-                this.modelWidget.getState().getRuntime().getEnvironment().query.addFunction("is_battling", (args) -> {
-                    return new com.bedrockk.molang.runtime.value.DoubleValue(selectedAnimation.toLowerCase().contains("battle") ? 1.0 : 0.0);
-                });
-            } else {
-                ((com.alkia.archipelago.util.ArchipelagoPosableState) (Object) this.modelWidget.getState()).archipelago$setForcedPose(null);
+                ArchipelagoPosableState state = (ArchipelagoPosableState) (Object) this.modelWidget.getState();
+                PosableModel model = this.modelWidget.getState().getCurrentModel();
+
+
+                boolean isBattleAnim = model != null && !model.getPoses().containsKey(selectedAnimation);
+                if (!isBattleAnim) {
+                    state.archipelago$setForcedPose(selectedAnimation);
+                    this.modelWidget.getState().getRuntime().getEnvironment().query.addFunction("is_battling", (args) -> {
+                        return new com.bedrockk.molang.runtime.value.DoubleValue(selectedAnimation.toLowerCase().contains("battle") ? 1.0 : 0.0);
+                    });
+                } else {
+                    state.archipelago$setForcedPose(null);
+                    this.modelWidget.getState().getRuntime().getEnvironment().query.addFunction("is_battling", args -> new DoubleValue(1.0));
+                    PosableState posableState = this.modelWidget.getState();
+                    if (posableState.getPrimaryAnimation() == null) {
+                        if (!selectedAnimation.equals(lastTriggeredAnimation)) {
+                            posableState.addFirstAnimation(java.util.Set.of(selectedAnimation));
+                            lastTriggeredAnimation = selectedAnimation;
+                        }
+                    }
+                }
             }
+
             this.modelWidget.render(graphics, mouseX, mouseY, delta);
         } else if (!pokemonInput.getValue().isEmpty()) {
             graphics.drawCenteredString(this.font, "Invalid Pokemon Species", this.width / 2, this.height / 2, 0xFF5555);

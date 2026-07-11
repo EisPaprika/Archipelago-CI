@@ -754,6 +754,15 @@ public class ModConfig {
 
             y += 24;
             this.addRenderableWidget(Button.builder(
+                            Component.literal("Skin Display Guide"),
+                            button -> {
+                                Minecraft client = Minecraft.getInstance();
+                                client.setScreen(new SkinDisplayGuideScreen(this));
+                            })
+                    .bounds(centerX - 100, y, 200, 20)
+                    .build());
+            y += 24;
+            this.addRenderableWidget(Button.builder(
                             Component.literal("Credits"),
                             button -> {
                                 Minecraft client = Minecraft.getInstance();

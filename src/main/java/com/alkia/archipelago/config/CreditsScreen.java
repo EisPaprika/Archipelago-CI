@@ -37,14 +37,18 @@ public class CreditsScreen extends Screen {
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         
         int centerX = this.width / 2;
-        int y = 50;
+        int top = 50;
 
         guiGraphics.drawCenteredString(this.font, "Thank you to all of Archipelago's supporters!", centerX, 20, 0xFFFFFF);
         guiGraphics.drawCenteredString(this.font, "Archipelago couldn't exist without you!", centerX, 30, 0xFFFFFF);
 
-        for (String name : SUPPORTERS) {
-            guiGraphics.drawCenteredString(this.font, name, centerX, y, 0xA0A0A0);
-            y += 12;
+        // Spill over into extra columns when the list is too long for the window (We got enough supporters for this, yipee!!!)
+        int maxRows = Math.max(1, (this.height - 40 - top) / 12);
+        int cols = (SUPPORTERS.size() + maxRows - 1) / maxRows;
+        int rows = (SUPPORTERS.size() + cols - 1) / cols;
+        for (int i = 0; i < SUPPORTERS.size(); i++) {
+            int x = centerX + ((i / rows) * 2 - (cols - 1)) * 60;
+            guiGraphics.drawCenteredString(this.font, SUPPORTERS.get(i), x, top + (i % rows) * 12, 0xA0A0A0);
         }
     }
 }
