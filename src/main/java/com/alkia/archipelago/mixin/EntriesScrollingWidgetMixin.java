@@ -44,7 +44,7 @@ public abstract class EntriesScrollingWidgetMixin {
             PokedexEntry dexData = dexDataList.get(i);
             PokedexEntryProgress discoveryLevel = discoveryLevelList.get(i);
 
-            if (discoveryLevel == PokedexEntryProgress.CAUGHT) {
+            if (discoveryLevel == PokedexEntryProgress.OWNED) {
                 
                 // Attempt to only display shiny mark on pokemon that have specifically been caught shiny. Sadly, doesn't work :( Still displays icon if only scanned with dex
                 var record = CobblemonClient.INSTANCE.getClientPokedexData().getSpeciesRecord(dexData.getSpeciesId());

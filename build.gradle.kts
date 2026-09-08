@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "com.alkia.archipelago"
-version = "1.7.5"
+version = "1.8.0"
 
 architectury {
     platformSetupLoomIde()
@@ -45,7 +45,7 @@ dependencies {
     modImplementation(fabricApi.module("fabric-lifecycle-events-v1", "0.116.6+1.21.1"))
 
     modImplementation("net.fabricmc:fabric-language-kotlin:1.13.6+kotlin.2.2.20")
-    modImplementation("com.cobblemon:fabric:1.7.1+1.21.1")
+    modImplementation("com.cobblemon:fabric:1.8.0+1.21.1")
 
     modImplementation ("com.terraformersmc:modmenu:11.0.1")
     modApi("me.shedaniel.cloth:cloth-config-fabric:15.0.140") {
