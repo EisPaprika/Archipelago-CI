@@ -230,7 +230,7 @@ public class PokemonSkinPreviewScreen extends Screen {
 
         this.modelWidget = new ModelWidget(
                 (int) (this.width / 2 - 100 + (xOffsetRaw * this.modelScale)),
-                this.height / 2 - 80,
+                (int) (this.height / 2 - 80),
                 200,
                 200,
                 pokemon,
@@ -238,7 +238,8 @@ public class PokemonSkinPreviewScreen extends Screen {
                 this.rotationY,
                 finalOffsetY,
                 false,
-                false
+                false,
+                13
         );
         this.modelWidget.getRotationVector().set(13.0f, this.rotationY, 0.0f);
     }
