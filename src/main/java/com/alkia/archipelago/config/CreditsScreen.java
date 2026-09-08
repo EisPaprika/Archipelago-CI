@@ -12,7 +12,7 @@ public class CreditsScreen extends Screen {
             "_stormreign", "Driplocaulus", "AgentExcadrill",
             "PMJP", "Novasam622", "121_Jiggawatts", "MacRaeDog", "Teahoneycat", "SoloGutman",
             "AnArtchist", "Khan121", "Flabs", "Jesse_Turtles", "Kygron", "Thumberking", "Lilcardawg",
-            "Spectra82", "K4rina"
+            "Spectra82", "K4rina", "EisPaprika"
     );
 
     public CreditsScreen(Screen parent) {
